@@ -1,4 +1,4 @@
-# Simplifying Graph Convolutional Networks
+# Simplified Graph Convolutional Networks
 
 This is a TensorFlow implementation of Simplified Graph Convolutional Networks for the task of (semi-supervised) classification of nodes in a graph:
  
