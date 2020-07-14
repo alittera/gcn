@@ -1,8 +1,11 @@
 # Simplified Graph Convolutional Networks
 
-This is a TensorFlow implementation of Simplified Graph Convolutional Networks for the task of (semi-supervised) classification of nodes in a graph:
+This is a TensorFlow implementation of Simplified Graph Convolutional Networks for the task of (semi-supervised) classification of nodes in a graph carried out as a project for the examination of Neural Networks, exam carried out at Sapienza university of Rome.
  
-Thomas N. Kipf, Max Welling, [Semi-Supervised Classification with Graph Convolutional Networks](http://arxiv.org/abs/1609.02907) (ICLR 2017)
+The project is based on:
+
+Thomas N. Kipf, Max Welling, [Semi-Supervised Classification with Graph Convolutional Networks](http://arxiv.org/abs/1609.02907)
+
 Wu , Zhang ,de Souza Jrm, [Simplifying Graph Convolutional Networks](https://arxiv.org/pdf/1902.07153)
 
 
