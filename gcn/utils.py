@@ -4,6 +4,10 @@ import networkx as nx
 import scipy.sparse as sp
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
+from time import perf_counter
+
+from gcn.layers import dot
+
 
 
 def parse_index_file(filename):
@@ -67,6 +71,7 @@ def load_data(dataset_str):
 
     features = sp.vstack((allx, tx)).tolil()
     features[test_idx_reorder, :] = features[test_idx_range, :]
+    
     adj = nx.adjacency_matrix(nx.from_dict_of_lists(graph))
 
     labels = np.vstack((ally, ty))
@@ -118,6 +123,15 @@ def preprocess_features(features):
     features = r_mat_inv.dot(features)
     return sparse_to_tuple(features)
 
+def preprocess_features_sparse(features):
+    """Row-normalize feature matrix and convert to tuple representation"""
+    rowsum = np.array(features.sum(1))
+    r_inv = np.power(rowsum, -1).flatten()
+    r_inv[np.isinf(r_inv)] = 0.
+    r_mat_inv = sp.diags(r_inv)
+    features = r_mat_inv.dot(features)
+    return features
+
 
 def normalize_adj(adj):
     """Symmetrically normalize adjacency matrix."""
@@ -167,3 +181,12 @@ def chebyshev_polynomials(adj, k):
         t_k.append(chebyshev_recurrence(t_k[-1], t_k[-2], scaled_laplacian))
 
     return sparse_to_tuple(t_k)
+
+######################################################################
+def sgcn_preprocess_features(features, adj, kstep):
+    
+    for i in range(kstep):
+        features = adj.dot(features)
+    
+    return sparse_to_tuple(features)
+######################################################################

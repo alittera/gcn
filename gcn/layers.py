@@ -129,6 +129,34 @@ class Dense(Layer):
         return self.act(output)
 
 
+######################################################################
+class SimpleGraphConvolution(Layer):
+    """Modified version of Graph convolution layer (to Dense), following 
+       SGC paper for NN project by Andrea Littera - Sapienza"""
+    def __init__(self, input_dim, output_dim, placeholders,
+                 sparse_inputs=False,  **kwargs):
+        super(SimpleGraphConvolution, self).__init__(**kwargs)
+
+        self.input_dim = input_dim
+        self.sparse_inputs = sparse_inputs
+
+        with tf.variable_scope(self.name + '_vars'):
+            self.vars['weights'] = glorot([input_dim, output_dim],
+                                          name='weights')
+            self.vars['bias'] = zeros([output_dim], name='bias')
+
+        if self.logging:
+            self._log_vars()
+
+    def _call(self, inputs):
+        output = dot(inputs, self.vars['weights'], sparse=self.sparse_inputs)
+        #output = dot(self.support, pre_sup, sparse=True) 
+        output += self.vars['bias']
+
+        return output
+
+
+
 class GraphConvolution(Layer):
     """Graph convolution layer."""
     def __init__(self, input_dim, output_dim, placeholders, dropout=0.,

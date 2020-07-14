@@ -1,22 +1,30 @@
 from __future__ import division
 from __future__ import print_function
 
-import time
+import time, os, sys
 import tensorflow as tf
+from tensorflow import keras
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from gcn.utils import *
-from gcn.models import GCN, MLP
+from gcn.models import GCN, MLP, SGCN
+
 
 # Set random seed
-seed = 123
+seed = int(time.time())
 np.random.seed(seed)
 tf.set_random_seed(seed)
+
+precomupte_time = 0
 
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('dataset', 'cora', 'Dataset string.')  # 'cora', 'citeseer', 'pubmed'
-flags.DEFINE_string('model', 'gcn', 'Model string.')  # 'gcn', 'gcn_cheby', 'dense'
+flags.DEFINE_string('model', 'sgcn', 'Model string.')  # 'gcn', 'gcn_cheby', 'dense', 'sgcn'
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden1', 16, 'Number of units in hidden layer 1.')
@@ -24,26 +32,47 @@ flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 5e-4, 'Weight for L2 loss on embedding matrix.')
 flags.DEFINE_integer('early_stopping', 10, 'Tolerance for early stopping (# of epochs).')
 flags.DEFINE_integer('max_degree', 3, 'Maximum Chebyshev polynomial degree.')
+######################################################################
+flags.DEFINE_integer('kstep', 2, 'Number of preprocessing steps for Simple GCN')
 
 # Load data
 adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = load_data(FLAGS.dataset)
 
 # Some preprocessing
-features = preprocess_features(features)
+
 if FLAGS.model == 'gcn':
     support = [preprocess_adj(adj)]
     num_supports = 1
     model_func = GCN
+    features = preprocess_features(features)
 elif FLAGS.model == 'gcn_cheby':
     support = chebyshev_polynomials(adj, FLAGS.max_degree)
     num_supports = 1 + FLAGS.max_degree
     model_func = GCN
+    features = preprocess_features(features)
 elif FLAGS.model == 'dense':
     support = [preprocess_adj(adj)]  # Not used
     num_supports = 1
     model_func = MLP
+    features = preprocess_features(features)
+
+######################################################################
+elif FLAGS.model == 'sgcn':
+    support = []
+    num_supports = 0
+    model_func = SGCN
+    features = preprocess_features_sparse(features)
+    start_time = time.time()
+    features = sgcn_preprocess_features(features,adj,FLAGS.kstep)
+    precomupte_time = time.time()-start_time
+    print("Total preprocessing time: " , precomupte_time)
+######################################################################
 else:
     raise ValueError('Invalid argument for model: ' + str(FLAGS.model))
+
+
+
+print("Using ", FLAGS.model)
 
 # Define placeholders
 placeholders = {
@@ -54,6 +83,7 @@ placeholders = {
     'dropout': tf.placeholder_with_default(0., shape=()),
     'num_features_nonzero': tf.placeholder(tf.int32)  # helper variable for sparse dropout
 }
+
 
 # Create model
 model = model_func(placeholders, input_dim=features[2][1], logging=True)
@@ -74,7 +104,7 @@ def evaluate(features, support, labels, mask, placeholders):
 sess.run(tf.global_variables_initializer())
 
 cost_val = []
-
+start_time = time.time()
 # Train model
 for epoch in range(FLAGS.epochs):
 
@@ -101,6 +131,11 @@ for epoch in range(FLAGS.epochs):
 
 print("Optimization Finished!")
 
+end_time = time.time()
+
+######################################################################
+print("Total training + preprocessing time: " , end_time-start_time+precomupte_time)
+######################################################################
 # Testing
 test_cost, test_acc, test_duration = evaluate(features, support, y_test, test_mask, placeholders)
 print("Test set results:", "cost=", "{:.5f}".format(test_cost),
