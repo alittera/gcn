@@ -34,6 +34,8 @@ You can specify a dataset as follows:
 
 ```bash
 python train.py --dataset citeseer
+python train.py --dataset cora
+python train.py --dataset pubmed
 ```
 
 (or by editing `train.py`)
