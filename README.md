@@ -1,6 +1,6 @@
 # Simplified Graph Convolutional Networks
 
-This is a TensorFlow implementation of Simplified Graph Convolutional Networks for the task of (semi-supervised) classification of nodes in a graph carried out as a project for the examination of Neural Networks, exam carried out at Sapienza university of Rome.
+This is a TensorFlow implementation of Simplified Graph Convolutional Networks for the task of (semi-supervised) classification of nodes in a graph carried out as a project for the examination of Neural Networks, at Sapienza university of Rome.
  
 The project is based on:
 
